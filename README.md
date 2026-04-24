@@ -26,6 +26,10 @@ A fictional UK district council demonstrating all Phase 1 [LocalGov Umbraco](htt
   ├── Greenfield-District-Council\   ← this repo
   └── LocalGov.Umbraco\              ← packages repo
   ```
+- A trusted .NET dev certificate — run once if you haven't already:
+  ```bash
+  dotnet dev-certs https --trust
+  ```
 
 ---
 
@@ -36,15 +40,15 @@ A fictional UK district council demonstrating all Phase 1 [LocalGov Umbraco](htt
 ```bash
 cd ../LocalGov.Umbraco
 dotnet build --configuration Release
-dotnet pack src/LocalGov.Umbraco.AlertBanner --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.ContentReview --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.Core --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.Guides --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.News --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.Services --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.StepByStep --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.Theme --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack meta/LocalGov.Umbraco --configuration Release --output ./nupkgs -p:Version=1.0.0
+dotnet pack src/LocalGov.Umbraco.AlertBanner --configuration Release --output ./nupkgs --no-build
+dotnet pack src/LocalGov.Umbraco.ContentReview --configuration Release --output ./nupkgs --no-build
+dotnet pack src/LocalGov.Umbraco.Core --configuration Release --output ./nupkgs --no-build
+dotnet pack src/LocalGov.Umbraco.Guides --configuration Release --output ./nupkgs --no-build
+dotnet pack src/LocalGov.Umbraco.News --configuration Release --output ./nupkgs --no-build
+dotnet pack src/LocalGov.Umbraco.Services --configuration Release --output ./nupkgs --no-build
+dotnet pack src/LocalGov.Umbraco.StepByStep --configuration Release --output ./nupkgs --no-build
+dotnet pack src/LocalGov.Umbraco.Theme --configuration Release --output ./nupkgs --no-build
+dotnet pack meta/LocalGov.Umbraco --configuration Release --output ./nupkgs
 ```
 
 ### 2 — Run the demo site
@@ -54,14 +58,22 @@ cd ../Greenfield-District-Council
 dotnet run --project src/GreenfieldDC.WebUI
 ```
 
-Browse to **https://localhost:44332** (or the port shown in the terminal).
+Browse to **https://localhost:44332**.
 
 ### 3 — Complete the Umbraco installer
 
 1. Create your admin account
-2. **Skip** the starter kit — the LocalGov content types install automatically
+2. When asked to configure the database, select **SQLite** and use this path:
+   ```
+   ./umbraco/Data/Umbraco.sqlite.db
+   ```
+3. **Skip** the starter kit when prompted
 
-### 4 — Create the content tree
+### 4 — Document types install automatically
+
+On the first page load after the installer, `USyncDeploymentComponent` extracts all LocalGov content type definitions (embedded in the installed packages) and writes them to `uSync/v13/`. uSync imports them automatically, creating all `lg*` document types in Umbraco — no manual steps needed.
+
+### 5 — Create the content tree
 
 In the Umbraco back-office, create the following root nodes:
 
@@ -106,7 +118,7 @@ All content types are prefixed `lg` and installed automatically on first startup
 
 Once `LocalGov.Umbraco` packages are published to NuGet, replace the local `nuget.config` entry with the standard NuGet feed and update your `PackageReference` versions accordingly.
 
-For production, swap SQLite for SQL Server by replacing `Umbraco.Cms.Persistence.Sqlite` with `Umbraco.Cms.Persistence.SqlServer` and updating the connection string.
+For production, swap SQLite for SQL Server by replacing `Umbraco.Cms.Persistence.Sqlite` with `Umbraco.Cms.Persistence.SqlServer` and updating the connection string in `appsettings.json`.
 
 ---
 

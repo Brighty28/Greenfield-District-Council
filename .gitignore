@@ -36,3 +36,6 @@ appsettings.Staging.json
 # OS
 .DS_Store
 Thumbs.db
+
+/src/GreenfieldDC.WebUI/Smidge/Cache/
+/src/GreenfieldDC.WebUI/Hangfire.db
