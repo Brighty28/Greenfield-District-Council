@@ -1,5 +1,4 @@
-From: Greenfield District Council maintainers
-Subject: [PATCH] Fix empty back-office on first boot: embed uSync schemas, reference uSync metapackage
+Fix empty back-office on first boot: embed uSync schemas, reference uSync metapackage
 
 The LocalGov.Umbraco packages ship uSync schema files that never reach
 the host site, so consumers boot into an empty Umbraco back-office with
@@ -7,53 +6,46 @@ none of the lg* document types installed.
 
 Three linked issues:
 
-1. Directory.Build.props packs uSync/**/* as `contentFiles\any\any\uSync\`.
-   Modern SDK-style PackageReference projects ignore `contentFiles` — those
-   files are never copied into the consumer's content root. This was a
-   packages.config-era mechanism.
+1. Directory.Build.props packs uSync/**/* as contentFiles\any\any\uSync\.
+   Modern SDK-style PackageReference projects ignore contentFiles, so
+   those files are never copied into the consumer's content root.
+   (contentFiles is a packages.config-era mechanism.)
 
 2. The runtime fallback (USyncDeploymentComponent) reads *embedded*
-   resources via `assembly.GetManifestResourceNames()`, but the csproj
+   resources via assembly.GetManifestResourceNames(), but the csproj
    items are <Content>, not <EmbeddedResource>. The component runs and
    silently copies nothing.
 
-3. LocalGov.Umbraco.Core references only `uSync.Core` (the serializer).
-   None of the packages reference `uSync` / `uSync.BackOffice`, so even
+3. LocalGov.Umbraco.Core references only uSync.Core (the serializer).
+   None of the packages reference uSync / uSync.BackOffice, so even
    if the schema files reached disk there are no handlers to import them
    on boot.
 
 This patch:
 
 - Switches uSync/**/* from Content to EmbeddedResource so the deployment
-  component can find them and materialise them to /uSync/v13 on the
-  host site.
-- Replaces the uSync.Core PackageReference in Core with `uSync` (the
+  component can find them and materialise them to /uSync/v13 on the host.
+- Replaces the uSync.Core PackageReference in Core with uSync (the
   metapackage) so uSync.BackOffice handlers are available transitively
   to all consumers.
 - Drops the now-unused uSync.Core PackageVersion entry.
 
 Consumers must still add the following to appsettings.json so uSync
-imports the freshly-deployed schema on startup. This is documented in
-the updated README.
+imports the freshly-deployed schema on startup:
 
   "uSync": { "Settings": { "ImportAtStartup": "All" } }
 
-Follow-up (not in this PR): have USyncDeploymentComponent trigger
-`ISyncService.Import(folder)` itself when it deploys new files, so
+Follow-up (separate PR): have USyncDeploymentComponent trigger
+ISyncService.Import(folder) itself when it deploys new files, so
 consumers don't need the appsettings snippet at all.
 ---
- Directory.Build.props                                   | 10 ++++++----
- Directory.Packages.props                                |  4 +---
- src/LocalGov.Umbraco.Core/LocalGov.Umbraco.Core.csproj  |  2 +-
- 3 files changed, 8 insertions(+), 8 deletions(-)
-
 diff --git a/Directory.Build.props b/Directory.Build.props
 --- a/Directory.Build.props
 +++ b/Directory.Build.props
-@@ -24,10 +24,12 @@
+@@ -23,10 +23,13 @@
      <FileVersion>1.0.0.0</FileVersion>
    </PropertyGroup>
-
+ 
 -  <!-- uSync config files: the RCL SDK already includes them implicitly as Content.
 -       Use Update (not Include) to set packaging metadata on the already-included items. -->
 +  <!-- uSync config files ship as EmbeddedResource so the runtime deployment component
@@ -65,33 +57,31 @@ diff --git a/Directory.Build.props b/Directory.Build.props
 +    <Content Remove="uSync\**\*" />
 +    <EmbeddedResource Include="uSync\**\*" />
    </ItemGroup>
-
+ 
    <!-- Umbraco Marketplace manifest: set pack metadata on the already-implicitly-included JSON file -->
 diff --git a/Directory.Packages.props b/Directory.Packages.props
 --- a/Directory.Packages.props
 +++ b/Directory.Packages.props
-@@ -13,9 +13,7 @@
+@@ -13,9 +13,8 @@
      <PackageVersion Include="Umbraco.Cms.Imaging.ImageSharp" Version="13.12.1" />
      <PackageVersion Include="Umbraco.Forms" Version="13.8.0" />
-
+ 
 -    <!-- uSync -->
 +    <!-- uSync: the full metapackage pulls in uSync.BackOffice, required for startup import of embedded schemas -->
      <PackageVersion Include="uSync" Version="13.3.2" />
 -    <PackageVersion Include="uSync.Core" Version="13.3.2" />
-
+ 
      <!-- Background tasks -->
      <PackageVersion Include="Cultiv.Hangfire" Version="3.1.2" />
 diff --git a/src/LocalGov.Umbraco.Core/LocalGov.Umbraco.Core.csproj b/src/LocalGov.Umbraco.Core/LocalGov.Umbraco.Core.csproj
 --- a/src/LocalGov.Umbraco.Core/LocalGov.Umbraco.Core.csproj
 +++ b/src/LocalGov.Umbraco.Core/LocalGov.Umbraco.Core.csproj
-@@ -10,7 +10,7 @@
+@@ -11,7 +11,7 @@
    <ItemGroup>
      <PackageReference Include="Umbraco.Cms.Web.Website" />
      <PackageReference Include="Umbraco.Cms.Web.BackOffice" />
 -    <PackageReference Include="uSync.Core" />
 +    <PackageReference Include="uSync" />
    </ItemGroup>
-
-   <ItemGroup>
---
-2.43.0
+ 
+   <!-- Embed uSync config files as content so they're included in the NuGet package -->

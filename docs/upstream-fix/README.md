@@ -1,65 +1,109 @@
 # Upstream fix for `Brighty28/Local-Gov-Umbraco`
 
-This folder holds the artefacts needed to open a PR against the upstream package repo that fixes the "empty back-office on first boot" issue observed when running this demo site.
+This folder holds the artefacts needed to open a PR against the upstream
+package repo that fixes the "empty back-office on first boot" issue
+observed when running this demo site.
 
 ## Files
 
-- **`schema-seeding.patch`** — unified diff against `Brighty28/Local-Gov-Umbraco@main`. Modifies three files:
-  - `Directory.Build.props`
-  - `Directory.Packages.props`
-  - `src/LocalGov.Umbraco.Core/LocalGov.Umbraco.Core.csproj`
-- **`PR_DESCRIPTION.md`** — ready-to-paste PR title, summary, rationale, verification steps, and checklist.
+- **`schema-seeding.patch`** — unified diff against
+  `Brighty28/Local-Gov-Umbraco@main`. Verified to apply cleanly with
+  `git apply --check` (commit `6b2d37c` and later).
+- **`PR_DESCRIPTION.md`** — drop-in PR title, summary, rationale,
+  verification steps, and checklist.
+- **`MANUAL_EDITS.md`** — if `git apply` gives you trouble, this is the
+  same change expressed as three simple find-and-replace edits you can
+  make by hand.
 
-## How to use
+## How to apply the patch (Git Bash on Windows)
+
+`git apply` must be run **from inside the Local-Gov-Umbraco repo**, not
+from inside this one. The earlier "corrupt patch" error was because the
+patch file was malformed — it's now been regenerated and verified.
 
 ```bash
-# 1. Clone the upstream repo (not a fork yet — we'll fork on push)
+# 1. Clone the upstream repo somewhere separate from this one
+cd /c/dev
 git clone https://github.com/Brighty28/Local-Gov-Umbraco.git
 cd Local-Gov-Umbraco
 
-# 2. Branch and apply the patch
+# 2. Create a branch
 git checkout -b fix/schema-seeding
-git apply /path/to/Greenfield-District-Council/docs/upstream-fix/schema-seeding.patch
 
-# 3. Verify it builds
+# 3. Apply the patch — note the path points *out* of this repo, into
+#    the Greenfield checkout next to it. Adjust to match where you
+#    cloned Greenfield-District-Council.
+git apply /c/dev/Greenfield-District-Council/docs/upstream-fix/schema-seeding.patch
+
+# 4. Sanity check: three files should be modified
+git status
+# Expected:
+#   modified:   Directory.Build.props
+#   modified:   Directory.Packages.props
+#   modified:   src/LocalGov.Umbraco.Core/LocalGov.Umbraco.Core.csproj
+
+# 5. Build to confirm nothing breaks
 dotnet build --configuration Release
 
-# 4. Commit
+# 6. Commit
 git add Directory.Build.props Directory.Packages.props \
         src/LocalGov.Umbraco.Core/LocalGov.Umbraco.Core.csproj
 git commit -m "Fix empty back-office on first boot: embed uSync schemas and reference uSync metapackage"
+```
 
-# 5. Push to your fork and open the PR using the body from PR_DESCRIPTION.md
+## Common errors
+
+### `error: corrupt patch at line N`
+
+Older copies of the patch file in this repo had malformed blank-line
+prefixes and wrong hunk counts. Re-pull the latest from
+`claude/local-gov-umbraco-cms-gnTl4` — the current `schema-seeding.patch`
+has been regenerated with `diff -u` from the real upstream files and
+verified with `git apply --check`.
+
+### `error: patch does not apply`
+
+Either:
+1. You ran `git apply` from the wrong directory. It must be from the
+   root of the `Local-Gov-Umbraco` clone.
+2. The upstream files have moved on since the patch was generated (date:
+   2026-04-24). In that case, use **`MANUAL_EDITS.md`** — the edits are
+   small and well-defined.
+
+### `git apply` complains about whitespace
+
+Try the more forgiving fallbacks in this order:
+
+```bash
+# Let git's 3-way merge handle minor context drift
+git apply --3way /c/dev/Greenfield-District-Council/docs/upstream-fix/schema-seeding.patch
+
+# Or use the system patch tool with fuzz
+patch -p1 --fuzz=3 < /c/dev/Greenfield-District-Council/docs/upstream-fix/schema-seeding.patch
+```
+
+If both fail, fall back to `MANUAL_EDITS.md`.
+
+## Opening the PR
+
+```bash
+# Fork and push (requires gh CLI authenticated)
 gh repo fork Brighty28/Local-Gov-Umbraco --remote --remote-name fork
 git push -u fork fix/schema-seeding
+
+# Open the PR with the description from this repo
 gh pr create --repo Brighty28/Local-Gov-Umbraco \
              --base main \
              --head "$(gh api user --jq .login):fix/schema-seeding" \
              --title "Fix empty back-office on first boot: embed uSync schemas and reference uSync metapackage" \
-             --body-file /path/to/Greenfield-District-Council/docs/upstream-fix/PR_DESCRIPTION.md
-```
-
-## If `git apply` complains about whitespace or context
-
-The patch uses standard unified-diff format with 3-line context. Fallbacks in order of preference:
-
-```bash
-# Fuzzy match with the system patch tool
-patch -p1 --fuzz=3 < /path/to/schema-seeding.patch
-
-# Or let git's 3-way merge resolve minor context drift
-git apply --3way /path/to/schema-seeding.patch
-
-# Or hand-apply: the three edits are small enough that PR_DESCRIPTION.md
-# documents the final state of each file section. Worst case, copy the
-# xml snippets from there.
+             --body-file /c/dev/Greenfield-District-Council/docs/upstream-fix/PR_DESCRIPTION.md
 ```
 
 ## After the upstream PR is merged
 
-Once the upstream packages are re-released (e.g. `1.0.1`), update this repo:
+Once the packages are re-released (e.g. `1.0.1`), update this repo:
 
-- Bump `LocalGov.Umbraco` in `src/GreenfieldDC.WebUI/GreenfieldDC.WebUI.csproj` to the new version.
+- Bump `LocalGov.Umbraco` in `src/GreenfieldDC.WebUI/GreenfieldDC.WebUI.csproj`.
 - Add the required uSync settings to `src/GreenfieldDC.WebUI/appsettings.json`:
   ```json
   "uSync": { "Settings": { "ImportAtStartup": "All" } }
