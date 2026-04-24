@@ -1,0 +1,38 @@
+# Build outputs
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+.idea/
+
+# Umbraco runtime data (not source)
+src/*/umbraco/Data/
+src/*/umbraco/Logs/
+src/*/umbraco/mediacache/
+src/*/App_Data/
+src/*/Logs/
+src/*/media/
+
+# uSync generated (content from back-office is environment-specific)
+src/*/uSync/v13/Content/
+src/*/uSync/v13/Media/
+
+# SQLite database
+*.sqlite.db
+*.sqlite.db-shm
+*.sqlite.db-wal
+
+# Sensitive config
+appsettings.Production.json
+appsettings.Staging.json
+
+# NuGet
+*.nupkg
+
+# OS
+.DS_Store
+Thumbs.db
