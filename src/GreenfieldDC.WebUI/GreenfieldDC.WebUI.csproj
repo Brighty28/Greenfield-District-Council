@@ -11,7 +11,7 @@
     <!-- Umbraco CMS core (required by all Umbraco sites) -->
     <PackageReference Include="Umbraco.Cms" Version="13.12.1" />
     <!-- All Phase 1 LocalGov modules via the meta-package -->
-    <PackageReference Include="LocalGov.Umbraco" Version="[1.0.1-preview]" />
+    <PackageReference Include="LocalGov.Umbraco" Version="1.0.0" />
     <!-- SQLite for local/demo use — swap for SQL Server in production -->
     <PackageReference Include="Umbraco.Cms.Persistence.Sqlite" Version="13.12.1" />
   </ItemGroup>
