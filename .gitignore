@@ -36,3 +36,6 @@ appsettings.Staging.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Smidge
+/src/*/Smidge/Cache/
