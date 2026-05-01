@@ -17,8 +17,8 @@ src/*/App_Data/
 src/*/Logs/
 src/*/media/
 
-# uSync generated (content from back-office is environment-specific)
-src/*/uSync/v13/Content/
+# uSync media is environment-specific (binary uploads). Content is committed
+# below as the canonical demo seed — uSync re-imports it on every start.
 src/*/uSync/v13/Media/
 
 # SQLite database
