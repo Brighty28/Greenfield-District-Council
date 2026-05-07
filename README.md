@@ -20,50 +20,61 @@ A fictional UK district council demonstrating all Phase 1 [LocalGov Umbraco](htt
 ## Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8)
-- The [LocalGov.Umbraco](https://github.com/Brighty28/Local-Gov-Umbraco) packages repo cloned **as a sibling** of this repo:
-  ```
-  C:\Dev\
-  ├── Greenfield-District-Council\   ← this repo
-  └── LocalGov.Umbraco\              ← packages repo
-  ```
+- Access to the **3CDigital Azure Artifacts feed** at
+  `https://pkgs.dev.azure.com/3CDigital/Digital Project/_packaging/3CDigital/nuget/v3/index.json`
+  (configured in this repo's `nuget.config`)
+
+### Authenticating with Azure Artifacts
+
+Before your first restore, authenticate against the feed using one of:
+
+**Visual Studio** — sign in to the same Microsoft account that has access to the
+3CDigital DevOps organisation. NuGet picks up the credential automatically.
+
+**dotnet CLI** — create a Personal Access Token with `Packaging > Read` scope at
+<https://dev.azure.com/3CDigital/_usersSettings/tokens>, then run:
+
+```bash
+dotnet nuget add source "https://pkgs.dev.azure.com/3CDigital/Digital Project/_packaging/3CDigital/nuget/v3/index.json" \
+    --name 3cdigital \
+    --username <your-email> \
+    --password <PAT> \
+    --store-password-in-clear-text
+```
+
+**Azure Artifacts Credential Provider** (recommended for headless dev) —
+follow <https://github.com/microsoft/artifacts-credprovider#installation> to
+install the cross-platform credential provider; it handles auth flows for you.
 
 ---
 
 ## Quick start
 
-### 1 — Pack the LocalGov.Umbraco packages
-
 ```bash
-cd ../LocalGov.Umbraco
-dotnet build --configuration Release
-dotnet pack src/LocalGov.Umbraco.AlertBanner --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.ContentReview --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.Core --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.Guides --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.News --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.Services --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.StepByStep --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack src/LocalGov.Umbraco.Theme --configuration Release --output ./nupkgs --no-build -p:Version=1.0.0
-dotnet pack meta/LocalGov.Umbraco --configuration Release --output ./nupkgs -p:Version=1.0.0
-```
-
-### 2 — Run the demo site
-
-```bash
-cd ../Greenfield-District-Council
+cd Greenfield-District-Council
+dotnet restore
 dotnet run --project src/GreenfieldDC.WebUI
 ```
 
-Browse to **https://localhost:44332** (or the port shown in the terminal).
+The browser auto-opens at **https://localhost:44332** (configurable in
+`src/GreenfieldDC.WebUI/Properties/launchSettings.json`).
 
-### 3 — Complete the Umbraco installer
+### 1 — Complete the Umbraco installer
 
 1. Create your admin account
-2. **Skip** the starter kit — the LocalGov content types install automatically
+2. **Skip** the starter kit — the LocalGov content types and templates install
+   automatically via uSync
 
-### 4 — Create the content tree
+### 2 — Verify the structure imported
 
-In the Umbraco back-office, create the following root nodes:
+In the back-office:
+- **Settings → Document Types** — should show `lgHome`, `lgSettings`, `lgServiceLanding` etc.
+- **Settings → Templates** — should show `LG Home`, `LG Service Landing`, `LG News List` etc.
+- **Settings → uSync** — if anything is missing, click **Import** to retry.
+
+### 3 — Create the content tree
+
+Create the following root nodes:
 
 | Name | Document type | Notes |
 |---|---|---|
@@ -104,9 +115,9 @@ All content types are prefixed `lg` and installed automatically on first startup
 
 ## Production use
 
-Once `LocalGov.Umbraco` packages are published to NuGet, replace the local `nuget.config` entry with the standard NuGet feed and update your `PackageReference` versions accordingly.
-
-For production, swap SQLite for SQL Server by replacing `Umbraco.Cms.Persistence.Sqlite` with `Umbraco.Cms.Persistence.SqlServer` and updating the connection string.
+For production, swap SQLite for SQL Server by replacing
+`Umbraco.Cms.Persistence.Sqlite` with `Umbraco.Cms.Persistence.SqlServer` and
+updating the connection string in `appsettings.json`.
 
 ---
 
